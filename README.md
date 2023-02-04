@@ -6,9 +6,9 @@ A command line client of youdao dictionary, based on python3(requests + bs4)
 
 ## dependence:
 
-python3(with [Python Standard Library](https://docs.python.org/3.7/library/index.html)), [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/), [requests](https://requests.readthedocs.io/en/latest/index.html)
+[Python3](https://www.python.org/)(with [Python Standard Library](https://docs.python.org/3.7/library/index.html)),  [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/),  [requests](https://requests.readthedocs.io/en/latest/index.html)
 
-+ Both `bs4` and `requests` can be installed by `pip` or `conda`. 
++ Both `bs4` and `requests` can be installed by [pip](https://pypi.org/) or [conda](https://anaconda.org). 
 
 
 ## installation:
