@@ -1,44 +1,110 @@
 #!/usr/bin/env python
 #coding=utf-8
-# ÅÀÈ¡ÓĞµÀ´ÊµäµÄµ¥´ÊÊı¾İ
+# çˆ¬å–æœ‰é“è¯å…¸çš„å•è¯æ•°æ®
 # 2022-12-3
+# 2023-2-4 updated
+
+version="1.1 (2023-2-4)"
 
 import requests
 from bs4 import BeautifulSoup
 import sys
 
-def searchDict(word):
-    url="https://dict.youdao.com/result?word={}&lang=en".format(word)
-    req=requests.get(url)
-    req.encoding='utf-8'
-    txt=req.text
-    bs4obj = BeautifulSoup(txt,"lxml")
-    c0= bs4obj.body.contents[1].contents[0].contents[0].contents[0].contents[1].contents[0].contents[0].contents[1].contents[1]
-    # »ñÈ¡´ÊĞÔºÍÒâÒå
-    c1 = c0.contents[1].contents[0].contents[0].contents[1]
-    n = len(c1)
-    means = []
-    for i in range(0,n-2):
-        means.append(c1.contents[i].get_text())
-    # »ñÈ¡ÅÉÉú´Ê
+def baiduFanyi(word):
+    query = word
+    from hashlib import md5
+    import json
+    # Proxy setting
+    proxies={
+        'http': 'http://127.0.0.1:7890',
+        'https': 'http://127.0.0.1:7890'
+    }
+    # Set your own appid/appkey.
+    appid = '20201212000645063'
+    appkey = 'HEhjErB3C9EQzQdtZklq'
+    # Set url
+    endpoint = 'http://api.fanyi.baidu.com'
+    path = '/api/trans/vip/translate'
+    url = endpoint + path
+    # It is recommend to use a random num as `salt` to enhance security. But I think is unnecessary.
+    salt = 65500 
+    sign = md5((appid + query + str(salt) + appkey).encode("utf-8")).hexdigest()
+    # Build request
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    payload = {'appid': appid, 'q': query, 'from': "en", 'to': "zh", 'salt': salt, 'sign': sign}
+    # Send request
     try:
-        c2 = c1.contents[n-1]
-        n = len(c2)
-        deris = []
-        for i in range(0,n):
-            deris.append(c2.contents[i].get_text())
+        r = requests.post(url, params=payload, headers=headers)
     except:
+        r = requests.post(url, params=payload, proxies=proxies, headers=headers)
+    finally:
+        try:
+            result = r.json()
+        except:
+            print("Error:request result={}".format(r))
+            return ""
+        # Get result
+        try:
+            trans_res = result['trans_result']
+            res = "" # translated text
+            for p in trans_res:
+                res += p["dst"]
+                res += "\n"
+            return res
+        except:
+            print("Error:")
+            print(json.dumps(result, indent=4, ensure_ascii=False))
+            return ""
+
+def searchDict(word):
+    # Proxy setting
+    proxies={
+        'http': 'http://127.0.0.1:7890',
+        'https': 'http://127.0.0.1:7890'
+    }
+
+    try: # First we try youdao dict
+        url="https://dict.youdao.com/result?word={}&lang=en".format(word)
+        try:
+            req=requests.get(url)
+        except:
+            req=requests.get(url,proxies=proxies)
+        finally:
+            req.encoding='utf-8'
+            txt=req.text
+            bs4obj = BeautifulSoup(txt,"lxml")
+            c0= bs4obj.body.contents[1].contents[0].contents[0].contents[0].contents[1].contents[0].contents[0].contents[1].contents[1]
+            # è·å–è¯æ€§å’Œæ„ä¹‰
+            c1 = c0.contents[1].contents[0].contents[0].contents[1]
+            n = len(c1)
+            means = []
+            for i in range(0,n-2):
+                means.append(c1.contents[i].get_text())
+            # è·å–æ´¾ç”Ÿè¯
+            try:
+                c2 = c1.contents[n-1]
+                n = len(c2)
+                deris = []
+                for i in range(0,n):
+                    deris.append(c2.contents[i].get_text())
+            except:
+                deris = []
+    except: # We can use Baidu Translation as an alternation
+        print("use baidu alternately.")
+        means = [baiduFanyi(word)]
         deris = []
-    return means,deris
+    finally:
+        return means,deris
 
 
 def help():
     help_text="""
 All available commands:
-    /?      print this information
-    /help   print this information
-    /exit   quit program
-    /quit   quit program
+    /?          print this information
+    /help       print this information
+    /exit       quit program
+    /quit       quit program
+    /version    print program version
 
 If you want to search any word, just type word after prompt.
     """
@@ -47,6 +113,7 @@ If you want to search any word, just type word after prompt.
 def command(cmd):
     if(cmd=="/exit"): sys.exit(0)
     elif(cmd=="/quit"): sys.exit(0)
+    elif(cmd=="/version"): print("\nversion: {}\n\n".format(version))
     elif(cmd=="/help"): help()
     elif(cmd=="/?"   ): help()
     else:
@@ -72,18 +139,3 @@ if(__name__=='__main__'):
                 print("Cannot find word:{}".format(word))
             finally:
                 print("\n\n")
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
