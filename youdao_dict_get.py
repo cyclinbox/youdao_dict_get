@@ -3,12 +3,15 @@
 # 爬取有道词典的单词数据
 # 2022-12-3
 # 2023-2-4 updated
+# 2023-8-29 updated: add `clear` command
+# 2023-12-17 updated: now can search word from command line arguments
 
-version="1.1 (2023-2-4)"
+version="1.3 (2023-12-17)"
 
 import requests
 from bs4 import BeautifulSoup
 import sys
+import os
 
 def baiduFanyi(word):
     query = word
@@ -104,6 +107,7 @@ All available commands:
     /help       print this information
     /exit       quit program
     /quit       quit program
+    /clear      clear screen output
     /version    print program version
 
 If you want to search any word, just type word after prompt.
@@ -114,6 +118,9 @@ def command(cmd):
     if(cmd=="/exit"): sys.exit(0)
     elif(cmd=="/quit"): sys.exit(0)
     elif(cmd=="/version"): print("\nversion: {}\n\n".format(version))
+    elif(cmd=="/clear"):
+        if("win" in sys.platform): os.system("cls")
+        else:                      os.system("clear")
     elif(cmd=="/help"): help()
     elif(cmd=="/?"   ): help()
     else:
@@ -121,10 +128,32 @@ def command(cmd):
         help()
 
 if(__name__=='__main__'):
+    # New: search word from command line
+    if(len(sys.argv)>1):
+        option = (" ".join(sys.argv[1:])).strip()
+        if(option[0] in ["-","/"] ): # process command call-back
+            option = option.replace("-","").replace("/","")
+            option = "/"+option
+            command(option)
+            sys.exit(0)
+        else: # search word, print word meaning and exit
+            try:
+                means,deris = searchDict(option)
+                print("\nWord meaning:")
+                for mean in means:print("\t{}".format(mean))
+                if(len(deris)>0):
+                    print("\nDerived words:")
+                    for deri in deris:print("\t{}".format(deri))
+            except:
+                print("Cannot find word:{}".format(word))
+            finally:
+                sys.exit(0)
+    # Default mode: search word in REPL mode
     print("Youdao_dict_get, get word meaning from youdao dict.")
     print("input `/help` for help")
     while(True):
         word = input('input word >>> ')
+        if(len(word)<1):continue
         if(word[0]=='/'):
             command(word)
         else:
